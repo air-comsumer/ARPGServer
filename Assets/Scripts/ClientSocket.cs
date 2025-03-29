@@ -12,6 +12,7 @@ namespace INTERNET_SERVER
         public Socket clientSocket;
         public static int CLIENT_ID = 1;
         public int clientID;
+        public string playerID;
         private byte[] cacheBytes = new byte[1024*1024];
         private int cacheNum = 0;
         private long frontTime = -1;
@@ -106,6 +107,14 @@ namespace INTERNET_SERVER
                         case 999:
                             baseMsg = new HeartMsg();
                             break;
+                        case 1001:
+                            baseMsg = new GetListMsg();
+                            baseMsg.Reading(cacheBytes,nowIndex);
+                            break;
+                        case 1002:
+                            baseMsg = new UpdateInfoMsg();
+                            baseMsg.Reading(cacheBytes,nowIndex);
+                            break;
                         case 1003:
                             baseMsg = new QuitMsg();
                             break;
@@ -134,13 +143,42 @@ namespace INTERNET_SERVER
                 }
             }
         }
-
+        /// <summary>
+        /// 更新数据信息，对UpdateInfoMsg的处理
+        /// </summary>
+        /// <param name="socket"></param>
+        /// <param name="playerData"></param>
+        private void MsgUpdateInfo(ClientSocket socket,UpdateInfoMsg playerData)
+        {
+            int start =0;
+            float x = playerData.x;
+            float y = playerData.y;
+            float z = playerData.z;
+            playerID = playerData.id;
+            Scene.Instance().UpdateInfo(socket.playerID, x, y, z);
+            UpdateInfoServerMsg updateInfoMsg = new UpdateInfoServerMsg();
+            updateInfoMsg.x = x;
+            updateInfoMsg.y = y;
+            updateInfoMsg.z = z;
+            updateInfoMsg.id = socket.playerID;
+            GameManager.Instance().socket.BroadCast(updateInfoMsg);
+        }
         private void MsgHandle(object obj)
         {
             switch(obj)
             {
                 case HeartMsg msg:
                     frontTime = DateTime.Now.Ticks/TimeSpan.TicksPerSecond;
+                    break;
+                case GetListMsg msg:
+                    {
+                        Scene.Instance().SendPlayerList(this);
+                    }
+                    break;
+                case UpdateInfoMsg msg:
+                    {
+                        MsgUpdateInfo(this, msg);
+                    }
                     break;
                 case QuitMsg msg:
                     Debug.Log("客户端主动断开连接");

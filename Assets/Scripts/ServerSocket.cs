@@ -35,6 +35,7 @@ namespace INTERNET_SERVER
             {
                 Socket clientSocket = e.AcceptSocket;
                 ClientSocket client = new ClientSocket(clientSocket);
+                GameManager.Instance().OnLogin(client);//登录时将角色添加到Scene中
                 clientDic.Add(client.clientID, client);
                 Debug.Log("连接成功"+client.clientSocket.ToString());
                 (sender as Socket).AcceptAsync(e);
@@ -52,7 +53,18 @@ namespace INTERNET_SERVER
                 if (clientDic.ContainsKey(socket.clientID))
                 {
                     clientDic.Remove(socket.clientID);
+                    GameManager.Instance().OnLogout(socket);//将角色从Scene中删除并通知其他客户端本地删除
                     Debug.LogFormat("客户端{0}主动断开连接了", socket.clientID);
+                }
+            }
+        }
+        public void BroadCast(BaseMsg msg)
+        {
+            lock (clientDic)
+            {
+                foreach (var client in clientDic.Values)
+                {
+                    client.Send(msg);
                 }
             }
         }
