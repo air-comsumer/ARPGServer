@@ -30,7 +30,7 @@ public class GetListMsg : BaseMsg
     {
         int index = beginIndex;
         personNum = ReadInt(bytes,ref index);
-        while (index < bytes.Length)
+        for (int i = 0; i < personNum; i++)
         {
             playerList.Add(ReadData<PlayerData>(bytes, ref index));
         }
@@ -44,9 +44,9 @@ public class GetListMsg : BaseMsg
         WriteInt(bytes,GetID(),ref index);
         WriteInt(bytes, GetBytesNum() - 8, ref index);
         WriteInt(bytes,personNum,ref index);
-        foreach(PlayerData p in playerList)
+        for (int i = 0; i < personNum; i++)
         {
-            WriteData(bytes, p,ref index);
+            WriteData(bytes, playerList[i], ref index);
         }
         return bytes;
     }

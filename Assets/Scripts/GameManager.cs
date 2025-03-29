@@ -10,7 +10,6 @@ public class GameManager : SingletonMono<GameManager>
     {
         socket = new ServerSocket();
         socket.Start("127.0.0.1", 12345, 10);
-        Scene scene = new Scene();
     }
     public void OnLogin(ClientSocket clientSocket)
     {
@@ -20,5 +19,8 @@ public class GameManager : SingletonMono<GameManager>
     {
         Scene.Instance().DelPlayer(clientSocket.playerID);
     }
-
+    private void OnDestroy()
+    {
+        socket.Close();
+    }
 }

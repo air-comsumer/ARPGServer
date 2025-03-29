@@ -28,17 +28,29 @@ namespace INTERNET_SERVER
                 Debug.LogError("服务器启动失败");
             }
         }
-
+        public void Close()
+        {
+            foreach(var client in clientDic.Values)
+            {
+                client.Close();
+                clientDic.Remove(client.clientID);
+                GameManager.Instance().OnLogout(client);//将角色从Scene中删除并通知其他客户端本地删除
+            }
+            clientDic.Clear();
+            socket = null;
+        }
         private void AcceptCallBack(object sender, SocketAsyncEventArgs e)
         {
             if (e.SocketError == SocketError.Success)
             {
                 Socket clientSocket = e.AcceptSocket;
                 ClientSocket client = new ClientSocket(clientSocket);
-                GameManager.Instance().OnLogin(client);//登录时将角色添加到Scene中
+                //GameManager.Instance().OnLogin(client);//登录时将角色添加到Scene中
                 clientDic.Add(client.clientID, client);
                 Debug.Log("连接成功"+client.clientSocket.ToString());
-                (sender as Socket).AcceptAsync(e);
+                SocketAsyncEventArgs newEventArgs = new SocketAsyncEventArgs();
+                newEventArgs.Completed += AcceptCallBack;
+                socket.AcceptAsync(newEventArgs);
             }
             else
             {

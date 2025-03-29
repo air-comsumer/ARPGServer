@@ -25,7 +25,7 @@ namespace INTERNET_SERVER
             e.SetBuffer(new byte[1024*1024],0, 1024*1024);
             e.Completed += ReceiveCallBack;
             clientSocket.ReceiveAsync(e);
-            ThreadPool.QueueUserWorkItem(CheckTimeOut);
+            //ThreadPool.QueueUserWorkItem(CheckTimeOut);
         }
         private void CheckTimeOut(object obj)
         {
@@ -45,8 +45,6 @@ namespace INTERNET_SERVER
                 Debug.Log("连接成功");
                 e.Buffer.CopyTo(cacheBytes, cacheNum);
                 cacheNum += e.BytesTransferred;
-                Debug.Log(e.BytesTransferred);
-                Debug.Log(Encoding.UTF8.GetString(cacheBytes));
                 HandleReceiveMsg(e.BytesTransferred);
                 e.SetBuffer(0, e.Buffer.Length);
                 (sender as Socket).ReceiveAsync(e);
@@ -108,7 +106,7 @@ namespace INTERNET_SERVER
                             baseMsg = new HeartMsg();
                             break;
                         case 1001:
-                            baseMsg = new GetListMsg();
+                            baseMsg = new GetListClientMsg();
                             baseMsg.Reading(cacheBytes,nowIndex);
                             break;
                         case 1002:
@@ -155,6 +153,7 @@ namespace INTERNET_SERVER
             float y = playerData.y;
             float z = playerData.z;
             playerID = playerData.id;
+            Scene.Instance().AddPlayer(playerID);
             Scene.Instance().UpdateInfo(socket.playerID, x, y, z);
             UpdateInfoServerMsg updateInfoMsg = new UpdateInfoServerMsg();
             updateInfoMsg.x = x;
@@ -170,7 +169,7 @@ namespace INTERNET_SERVER
                 case HeartMsg msg:
                     frontTime = DateTime.Now.Ticks/TimeSpan.TicksPerSecond;
                     break;
-                case GetListMsg msg:
+                case GetListClientMsg msg:
                     {
                         Scene.Instance().SendPlayerList(this);
                     }
