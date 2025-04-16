@@ -12,9 +12,9 @@ public class UpdateInfoMsg : BaseMsg
     public override int GetBytesNum()
     {
         return 4//协议ID
-            + 4//长度
-            + 4 + Encoding.UTF8.GetBytes(id).Length
-            + 4 + 4 + 4;
+            +4//长度
+            +4+Encoding.UTF8.GetBytes(id).Length
+            +4+4+4;
     }
 
     public override int GetID()
@@ -25,23 +25,23 @@ public class UpdateInfoMsg : BaseMsg
     public override int Reading(byte[] bytes, int beginIndex = 0)
     {
         int index = beginIndex;
-        id = ReadString(bytes, ref index);
+        id = ReadString(bytes,ref index);
         x = ReadFloat(bytes, ref index);
         y = ReadFloat(bytes, ref index);
         z = ReadFloat(bytes, ref index);
-        return index - beginIndex;
+        return index-beginIndex;
     }
 
     public override byte[] Writing()
     {
         int index = 0;
         byte[] bytes = new byte[GetBytesNum()];
-        WriteInt(bytes, GetID(), ref index);
-        WriteInt(bytes, GetBytesNum() - 8, ref index);
-        WriteString(bytes, id, ref index);
-        WriteFloat(bytes, x, ref index);
-        WriteFloat(bytes, y, ref index);
-        WriteFloat(bytes, z, ref index);
+        WriteInt(bytes,GetID(),ref index);
+        WriteInt(bytes,GetBytesNum()-8,ref index);
+        WriteString(bytes,id,ref index);
+        WriteFloat(bytes,x,ref index);
+        WriteFloat(bytes,y,ref index);
+        WriteFloat(bytes,z,ref index);
         return bytes;
     }
 }

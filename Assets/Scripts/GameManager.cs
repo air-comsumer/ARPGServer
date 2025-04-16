@@ -9,7 +9,7 @@ public class GameManager : SingletonMono<GameManager>
     void Start()
     {
         socket = new ServerSocket();
-        socket.Start("127.0.0.1", 12345, 10);
+        socket.Start("192.168.3.57", 12345, 10);
     }
     public void OnLogin(ClientSocket clientSocket)
     {

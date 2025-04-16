@@ -15,7 +15,7 @@ namespace INTERNET_SERVER
         public string playerID;
         private byte[] cacheBytes = new byte[1024*1024];
         private int cacheNum = 0;
-        private long frontTime = -1;
+        public long frontTime = -1;
         private static int TIME_OUT_TIME = 10;
         public ClientSocket(Socket socket)
         {
@@ -25,7 +25,7 @@ namespace INTERNET_SERVER
             e.SetBuffer(new byte[1024*1024],0, 1024*1024);
             e.Completed += ReceiveCallBack;
             clientSocket.ReceiveAsync(e);
-            //ThreadPool.QueueUserWorkItem(CheckTimeOut);
+            ThreadPool.QueueUserWorkItem(CheckTimeOut);
         }
         private void CheckTimeOut(object obj)
         {
@@ -42,7 +42,7 @@ namespace INTERNET_SERVER
         {
             if (e.SocketError == SocketError.Success)
             {
-                Debug.Log("连接成功");
+                //Debug.Log("连接成功");
                 e.Buffer.CopyTo(cacheBytes, cacheNum);
                 cacheNum += e.BytesTransferred;
                 HandleReceiveMsg(e.BytesTransferred);
@@ -100,6 +100,8 @@ namespace INTERNET_SERVER
                 if (cacheNum - nowIndex >= msgLength && msgLength != -1)
                 {
                     BaseMsg baseMsg = null;
+                    if (msgID != 999)
+                        Debug.Log(msgID);
                     switch (msgID)
                     {
                         case 999:
@@ -116,6 +118,52 @@ namespace INTERNET_SERVER
                         case 1003:
                             baseMsg = new QuitMsg();
                             break;
+                        case 888:
+                            baseMsg = new BoolMsg();
+                            break;
+                        case 2001:
+                            baseMsg = new LoginMsg();
+                            baseMsg.Reading(cacheBytes, nowIndex);
+                            break;
+                        case 2002:
+                            baseMsg = new RegMsg();
+                            baseMsg.Reading(cacheBytes, nowIndex);
+                            break;
+                        case 2003:
+                            baseMsg = new GetRoomListMsg();
+                            baseMsg.Reading(cacheBytes, nowIndex);
+                            break;
+                        case 2004:
+                            baseMsg = new CreateRoomMsg();
+                            baseMsg.Reading(cacheBytes, nowIndex);
+                            break;
+                        case 2005:
+                            baseMsg = new EnterRoomMsg();
+                            baseMsg.Reading(cacheBytes, nowIndex);
+                            break;
+                        case 2006:
+                            baseMsg = new GetRoomInfoMsg();
+                            baseMsg.Reading(cacheBytes, nowIndex);
+                            break;
+                        case 2007:
+                            baseMsg = new LeaveRoomMsg();
+                            break;
+                        case 2008:
+                            baseMsg = new StartFightMsg();
+                            baseMsg.Reading(cacheBytes, nowIndex);
+                            break;
+                        case 2009:
+                            baseMsg = new PlayerChangeMessage();
+                            baseMsg.Reading(cacheBytes, nowIndex);
+                            break;
+                        case 2010:
+                            baseMsg = new PlayerAnimeMsg();
+                            baseMsg.Reading(cacheBytes, nowIndex);
+                            break;
+                        case 2011:
+                            baseMsg = new PlayerMoveMsg();
+                            baseMsg.Reading(cacheBytes, nowIndex);
+                            break;
                         default:
                             {
                                 Debug.Log(Encoding.UTF8.GetString(cacheBytes));
@@ -123,7 +171,7 @@ namespace INTERNET_SERVER
                             }
                     }
                     if (baseMsg != null)
-                        ThreadPool.QueueUserWorkItem(MsgHandle, baseMsg);
+                        ThreadPool.QueueUserWorkItem(MsgHandle,baseMsg);
                     nowIndex += msgLength;
                     if (nowIndex == cacheNum)
                     {
@@ -141,33 +189,13 @@ namespace INTERNET_SERVER
                 }
             }
         }
-        /// <summary>
-        /// 更新数据信息，对UpdateInfoMsg的处理
-        /// </summary>
-        /// <param name="socket"></param>
-        /// <param name="playerData"></param>
-        private void MsgUpdateInfo(ClientSocket socket,UpdateInfoMsg playerData)
+        public void MsgHandle(object obj)
         {
-            int start =0;
-            float x = playerData.x;
-            float y = playerData.y;
-            float z = playerData.z;
-            playerID = playerData.id;
-            Scene.Instance().AddPlayer(playerID);
-            Scene.Instance().UpdateInfo(socket.playerID, x, y, z);
-            UpdateInfoServerMsg updateInfoMsg = new UpdateInfoServerMsg();
-            updateInfoMsg.x = x;
-            updateInfoMsg.y = y;
-            updateInfoMsg.z = z;
-            updateInfoMsg.id = socket.playerID;
-            GameManager.Instance().socket.BroadCast(updateInfoMsg);
-        }
-        private void MsgHandle(object obj)
-        {
-            switch(obj)
+            switch (obj)
             {
                 case HeartMsg msg:
-                    frontTime = DateTime.Now.Ticks/TimeSpan.TicksPerSecond;
+
+                    frontTime = DateTime.Now.Ticks / TimeSpan.TicksPerSecond;
                     break;
                 case GetListClientMsg msg:
                     {
@@ -176,16 +204,77 @@ namespace INTERNET_SERVER
                     break;
                 case UpdateInfoMsg msg:
                     {
-                        MsgUpdateInfo(this, msg);
+                        MessageHandle.Instance().MsgUpdateInfo(this, msg);
                     }
                     break;
                 case QuitMsg msg:
                     Debug.Log("客户端主动断开连接");
                     GameManager.Instance().socket.CloseClientSocket(this);
                     break;
+                case LoginMsg msg:
+                    { 
+                        Debug.Log("登录请求");
+                        MessageHandle.Instance().PlayerLogin(this, msg);
+                    }
+                    break;
+                case RegMsg msg:
+                    {
+                        MessageHandle.Instance().PlayerReg(this, msg);
+                    }
+                    break;
+                case GetRoomListMsg msg:
+                    {
+                        MessageHandle.Instance().RefershRoomList(this, msg);
+                    }
+                    break;
+                case CreateRoomMsg msg:
+                    {
+                        MessageHandle.Instance().CreateRoom(this, msg);
+                    }
+                    break;
+                case EnterRoomMsg msg:
+                    {
+                        MessageHandle.Instance().EnterRoom(this, msg);
+                    }
+                    break;
+                case GetRoomInfoMsg msg:
+                    {
+                       
+                    }
+                    break;
+                case LeaveRoomMsg msg:
+                    {
+
+                    }
+                    break;
+                case StartFightMsg msg:
+                    {
+                        Debug.Log("开始战斗");
+                        MessageHandle.Instance().StartFight(this, msg);
+                    }
+                    break;
+                case PlayerChangeMessage msg:
+                    {
+                        Debug.Log("玩家变更");
+                        MessageHandle.Instance().PlayerChange(this, msg);
+                    }
+                    break;
+                case PlayerAnimeMsg msg:
+                    {
+                        Debug.Log("玩家动画");
+                        MessageHandle.Instance().PlayerAnime(this, msg);
+                    }
+                    break;
+                case PlayerMoveMsg msg:
+                    {
+                        Debug.Log("玩家移动");
+                        MessageHandle.Instance().PlayerMove(this, msg);
+                    }
+                    break;
 
             }
         }
+
     }
 }
 
